@@ -1,0 +1,114 @@
+#include <Ethernet.h>
+#include <SPI.h>
+#include <PubSubClient.h>
+#include "SoftwareSerial.h"
+#include "Adafruit_CCS811.h"
+#include "DHT.h"
+#define TOKEN "c8fajuGanHGE9ZurUQ37"
+#define DHTPIN 7
+#define DHTTYPE DHT22
+
+byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED }; // RESERVED MAC ADDRESS
+EthernetClient Eclient;
+char thingsboardServer[] = "demo.thingsboard.io";
+
+PubSubClient client(Eclient);
+
+SoftwareSerial soft(2, 3); // RX, TX
+
+unsigned long lastSend;
+
+Adafruit_CCS811 ccs;
+
+DHT dht(DHTPIN, DHTTYPE);
+
+void setup() {
+  Serial.begin(9600);
+  dht.begin();
+  
+  Serial.println("CCS811 test");
+
+  if (Ethernet.begin(mac) == 0) {
+    Serial.println("Failed to configure Ethernet using DHCP"); 
+  }
+  
+  if(!ccs.begin()){
+    Serial.println("Failed to start sensor! Please check your wiring.");
+    while(1);
+  }
+
+  //calibrate temperature sensor
+  while(!ccs.available());
+  float temp = ccs.calculateTemperature();
+  ccs.setTempOffset(temp - 25.0);
+
+  client.setServer( thingsboardServer, 1883 );
+  lastSend = 0;
+}
+
+void loop() {
+  if ( !client.connected() ) {
+    reconnect();
+  }
+  
+  if(ccs.available()){
+    float temp = ccs.calculateTemperature();
+    if(!ccs.readData()){
+      Serial.print("CO2: ");
+      Serial.print(ccs.geteCO2());
+      Serial.print("ppm, TVOC: ");
+      Serial.print(ccs.getTVOC());
+      Serial.print("ppb   Temp:");
+      Serial.println(temp);
+
+      float co2 = ccs.geteCO2();
+      float voc = ccs.getTVOC();
+      float t = dht.readTemperature();
+      float h = dht.readHumidity();
+      
+
+      String CO2 = String(co2);
+      String VOC = String(voc);
+      String temperature = String(t);
+      String humidity = String(h);
+      
+      Serial.print( CO2 ); Serial.print( "," );
+      Serial.print( VOC );
+
+      String payload = "{";
+      payload += "\"temperature\":"; payload += temperature; payload += ",";
+      payload += "\"humidity\":"; payload += humidity;payload += ",";
+      payload += "\"CO2\":"; payload += CO2; payload += ",";
+      payload += "\"VOC\":"; payload += VOC;
+      payload += "}";
+
+
+      char attributes[100];
+      payload.toCharArray( attributes, 100 );
+      client.publish( "v1/devices/me/telemetry", attributes );
+      Serial.println( attributes );
+    }
+    else{
+      Serial.println("ERROR!");
+      while(1);
+    }
+  }
+  delay(500);
+}
+
+void reconnect() {
+  // Loop until we're reconnected
+  while (!client.connected()) {
+    Serial.print("Connecting to ThingsBoard node ...");
+    // Attempt to connect (clientId, username, password)
+    if ( client.connect("Arduino Uno Device", TOKEN, NULL) ) {
+      Serial.println( "[DONE]" );
+    } else {
+      Serial.print( "[FAILED] [ rc = " );
+      Serial.print( client.state() );
+      Serial.println( " : retrying in 5 seconds]" );
+      // Wait 5 seconds before retrying
+      delay( 5000 );
+    }
+  }
+}
