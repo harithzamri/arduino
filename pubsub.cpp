@@ -4,7 +4,6 @@
 #include "SoftwareSerial.h"
 #include "Adafruit_CCS811.h"
 #include "DHT.h"
-#include <PubSubClient.h>
 #define DHTPIN 7
 #define DHTTYPE DHT22
 
@@ -55,7 +54,7 @@ void setup() {
 
 void loop()
 {
-    if(!client.connected(){
+    if(!client.connected()){
         reconnect();
     }
 
