@@ -7,9 +7,10 @@
 #define DHTPIN 7
 #define DHTTYPE DHT22
 
-const char *mqtt_user ='eeyukxqp';
-const char *mqtt_pass ='Dy1aiZ3nfPHL';
-const char *mqtt_server = 'm12.cloudmqtt.com'
+const char *mqtt_user ="eeyukxqp";
+const char *mqtt_pass ="Dy1aiZ3nfPHL";
+const char *mqtt_server ="m14.cloudmqtt.com";
+
 
 byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED }; // RESERVED MAC ADDRESS
 EthernetClient Eclient;
@@ -44,7 +45,7 @@ void setup() {
   ccs.setTempOffset(temp - 25.0);
 
   lastSend = 0;
-  client.setServer(mqtt_server, 17389);
+  client.setServer("m16.cloudmqtt.com", 11588);
   client.setCallback(callback);
   reconnect();
 
@@ -60,15 +61,23 @@ void loop()
 
     client.loop();
 
-     float co2 = ccs.geteCO2();
-     float voc = ccs.getTVOC();
+//     float co2 = ccs.geteCO2();
+//     float voc = ccs.getTVOC();
      float t = dht.readTemperature();
      float h = dht.readHumidity();
 
-    client.publish('temperature', t);
-    client.publish('humidity', h);
-    client.publish('VOC', voc);
-    client.publish('Carbon Dioxide', co2);
+
+      delay(1000);
+      String tt = String(tt);
+
+      int numt = t;
+      char cstr[16];
+      itoa(numt, cstr, 10);
+
+    client.publish('temperature', cstr);
+    //client.publish('humidity', h);
+//    client.publish('VOC', voc);
+//    client.publish('Carbon Dioxide', co2);
 }
 
 
@@ -77,10 +86,12 @@ void callback(char *topic, byte *payload, unsigned int length)
    Serial.print("Message Arrived [");
    Serial.print("topic");
    Serial.print("]");
-   for(int = 0 ; i <length ; i++)
+   
+   for(int i=0;i<length;i++)
    {
-     Serial.print((char)payload[i])
+     Serial.print((char)payload[i]); 
    }
+   
    Serial.println();
 }
 
@@ -91,8 +102,8 @@ void reconnect()
         Serial.print("Attempting MQTT Connection ..");
 
         String clientID = "ESP8266Client-";
-        clientID += String(random(0xffff) HEX);
-        if (client.connect(clientID.c_str(), mqtt_user, mqtt_pass))
+        clientID += String(random(0xffff),HEX);
+        if (client.connect(clientID.c_str(), "jhfsrkth", "LeA8c8Q7ZPoH"))
         {
           Serial.println("connected");
           client.publish("outTopic", "hello world");
@@ -107,4 +118,3 @@ void reconnect()
         }
     }
 }
-
