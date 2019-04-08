@@ -61,8 +61,12 @@ void loop()
 
     client.loop();
 
-//     float co2 = ccs.geteCO2();
-//     float voc = ccs.getTVOC();
+     if(ccs.available()){
+      float temp = ccs.calculateTemperature();
+     }
+     if(!ccs.readData()){
+     float co2 = ccs.geteCO2();
+     float voc = ccs.getTVOC();
      float t = dht.readTemperature();
      float h = dht.readHumidity();
 
@@ -74,10 +78,27 @@ void loop()
       char cstr[16];
       itoa(numt, cstr, 10);
 
-    client.publish('temperature', cstr);
-    //client.publish('humidity', h);
-//    client.publish('VOC', voc);
-//    client.publish('Carbon Dioxide', co2);
+      int numh = h;
+      char cshr[16];
+      itoa(numh, cshr, 10);
+
+      int numvoc = voc;
+      char csvoc[16];
+      itoa(numvoc, csvoc, 10);
+
+      int numco2 = co2;
+      char csco2[16];
+      itoa(numco2, csco2, 10);
+
+    client.publish("temperature", cstr);
+    delay(1000);
+    client.publish("humidity", cshr );
+    delay(1000);
+    client.publish("voc", csvoc );
+    delay(1000);
+    client.publish("co2", csco2);
+    }
+   
 }
 
 
@@ -107,7 +128,7 @@ void reconnect()
         {
           Serial.println("connected");
           client.publish("outTopic", "hello world");
-          client.subscribe("inTopic");
+          
         }
         else 
         {
